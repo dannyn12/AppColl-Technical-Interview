@@ -1,4 +1,5 @@
 **Author:** Danny Nguyen
+
 This applications imports the data found in "https://data.cityofnewyork.us/resource/qz5f-yx82.csv" and displays a "table of the raw data", the total number of zip codes, and the zip codes where the percentage of homes with no internet access is below 10%. It also allows the user to import data into XML, JSON, and "raw" (CSV) format. 
 
 ## Tech Stack
