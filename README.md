@@ -1,8 +1,13 @@
-Author: Danny Nguyen
+**Author:** Danny Nguyen
+
+## Tech Stack
+* **Language:** C#
+* **Framework:** .NET Core / ASP.NET Core
+* **Web UI:** Blazor Server
 
 This applications imports the data found in "https://data.cityofnewyork.us/resource/qz5f-yx82.csv" and displays a "table of the raw data", the total number of zip codes, and the zip codes where the percentage of homes with no internet access is below 10%. It also allows the user to import data into XML, JSON, and "raw" (CSV) format. 
 
-How to build/deploy/run (in VS Code):
+## How to build/deploy/run (in VS Code):
 1. Open the project folder
 2. Navigate to the application directory in terminal
 3. Restore project's dependencies (dotnet restore)
@@ -10,7 +15,7 @@ How to build/deploy/run (in VS Code):
 5. Run application (dotnet run)
 6. Open the URL shown in terminal
 
-Testing:
+## Testing:
 The application was manually tested using this process:
 1. Started the application using the Load Data button.
 2. Verified the data was successfully imported.
