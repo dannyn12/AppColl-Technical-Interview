@@ -1,0 +1,198 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@using FileImport.Services
+@using FileImport.Models
+@inject DataService DataService
+@inject IJSRuntime JS
+
+<PageTitle>File Import</PageTitle>
+
+<h1>File Import App</h1>
+
+<button class="btn btn-success" @onclick="LoadData">
+    Load Data
+</button>
+
+<button class="btn btn-danger" @onclick="ResetData">
+    Start Over
+</button>
+
+<div class="mt-3">
+    <button class="btn btn-warning" @onclick="ToggleData">
+        @(showingFilteredData ? "Show All Data" : $"Show Zip Codes with No Internet Access Below {percentageThreshold*100}%")
+    </button>
+    <button class="btn btn-secondary" @onclick="OpenExportModal">
+        Export All Data
+    </button>
+</div>
+
+@if (isLoading) 
+{
+    <p class="mt-2">Loading data...</p>
+}
+else 
+{
+    <p class="mt-3"> Total Number of Zip Codes in Data: @totalZipCodes </p>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>OID</th>
+                <th>ZIP Code</th>
+                <th>Home Broadband Adoption</th>
+                <th>Mobile Broadband Adoption</th>
+                <th>No Internet Access Percentage</th>
+                <th>No Home Broadband Adoption</th>
+                <th>No Mobile Broadband Adoption</th>
+                <th>Home Broadband Adoption Category</th>
+                <th>Mobile Broadband Adoption Category</th>
+                <th>Commercial Fiber Max ISP</th>
+                <th>Public Computer Center Count</th>
+                <th>Workstations in PCCs</th>
+                <th>Avg Training Hrs Per Week</th>
+                <th>Public WiFi Count</th>
+                <th>Poles Reserved by Mobile</th>
+                <th>Pole with Equipment Installed</th>
+                <th>Density of Poles Reserved</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var zipCode in showingFilteredData ? filteredZipCodes : zipCodes)
+            {
+                <tr>
+                    <td>@zipCode.Oid</td>
+                    <td>@zipCode.ZipCodeValue</td>
+                    <td>@zipCode.HomeBroadbandAdoption</td>
+                    <td>@zipCode.MobileBroadbandAdoption</td>
+                    <td>@zipCode.NoInternetAccessPercentage</td>
+                    <td>@zipCode.NoHomeBroadbandAdoption</td>
+                    <td>@zipCode.NoMobileBroadbandAdoption</td>
+                    <td>@zipCode.HomeBroadbandAdoptionCategory</td>
+                    <td>@zipCode.MobileBroadbandAdoptionCategory</td>
+                    <td>@zipCode.CommercialFiberMaxIsp</td>
+                    <td>@zipCode.PublicComputerCenterCount</td>
+                    <td>@zipCode.WorkstationsInPccs</td>
+                    <td>@zipCode.AvgTrainingHrsPerWeek</td>
+                    <td>@zipCode.PublicWiFiCount</td>
+                    <td>@zipCode.PolesReservedByMobile</td>
+                    <td>@zipCode.PoleWithEquipmentInstalled</td>
+                    <td>@zipCode.DensityOfPolesReserved</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (showExportModal)
+{
+    <div class="modal fade show d-block">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Export All Data</h5>
+                    <button type="button" class="btn-close" @onclick="CloseExportModal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Select a format to download:</p>
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" @onclick="@(() => ExportData("xml"))">
+                            Export as XML
+                        </button>
+                        <button class="btn btn-primary" @onclick="@(() => ExportData("json"))">
+                            Export as JSON
+                        </button>
+                        <button class="btn btn-primary" @onclick="@(() => ExportData("csv"))">
+                            Export as "raw" (CSV)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseExportModal">
+                        Cancel
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private List<ZipCode> zipCodes = new List<ZipCode>();
+    private List<ZipCode> filteredZipCodes = new List<ZipCode>();
+    private int? totalZipCodes = null;
+    private double percentageThreshold = 0.1;
+    private bool showingFilteredData = false;
+    private bool showExportModal = false;
+    private bool isLoading = false;
+
+    protected void OpenExportModal()
+    {
+        Console.WriteLine("Opening export modal...");
+        showExportModal = true;
+    }
+
+    protected void CloseExportModal()
+    {
+        Console.WriteLine("Closing export modal...");
+        showExportModal = false;
+    }
+
+    private void ToggleData()
+    {
+        showingFilteredData = !showingFilteredData;
+    }
+
+    protected async Task LoadData()
+    {
+        
+        Console.WriteLine("Loading data...");
+        isLoading = true;
+        try 
+        {
+            zipCodes = await DataService.LoadZipcodeDataAsync();
+            totalZipCodes = await DataService.GetTotalZipcodesAsync();
+            filteredZipCodes = await DataService.GetZipcodesWithNoInternetAccessBelowPercentageAsync(percentageThreshold);
+        }
+        finally
+        {
+            isLoading = false;
+        }   
+    }
+
+    protected void ResetData()
+    {
+        Console.WriteLine("Resetting data...");
+        zipCodes.Clear();
+        filteredZipCodes.Clear();
+        totalZipCodes = 0;
+    }
+
+    protected async Task ExportData(string format)
+    {
+        Console.WriteLine($"Exporting data as {format}...");
+
+        switch (format)
+        {
+            case "json":
+                var json = DataService.ExportToJson(zipCodes);
+                await JS.InvokeVoidAsync("downloadFile", "zipcode-data.json", "application/json", json);
+                break;
+
+            case "xml":
+                var xml = DataService.ExportToXml(zipCodes);
+                await JS.InvokeVoidAsync("downloadFile", "zipcode-data.xml", "application/xml", xml);
+                break;
+
+            case "csv":
+                var csv = DataService.ExportToCsv(zipCodes);
+                await JS.InvokeVoidAsync("downloadFile", "zipcode-data.csv", "text/csv", csv);
+                break;
+        }
+
+        showExportModal = false;
+    }
+}
